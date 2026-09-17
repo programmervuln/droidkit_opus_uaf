@@ -25,6 +25,107 @@ rerun reproduction
 export ASAN_OPTIONS="detect_leaks=1:abort_on_error=1"
 ./uaf_test --decoder-uaf
 
+ASAN crash log:
+./uaf_test --decoder-uaf
+=== Running Decoder UAF PoC (_opusFile race) ===
+=================================================================
+==13033==ERROR: AddressSanitizer: heap-use-after-free on address 0x62900001d7a0 at pc 0x5bb57d2556d4 bp 0x730f839fa740 sp 0x730f839f9f08
+READ of size 84 at 0x62900001d7a0 thread T1
+    #0 0x5bb57d2556d3 in __interceptor_memcpy (/home/lloyd/Documents/droidkit-opus-master/opus/src/main/jni/uaf_test+0x396d3) (BuildId: c46328532cffb6f7d583cc0bca8a0239d3257064)
+    #1 0x730f861f2109  (/lib/x86_64-linux-gnu/libopus.so.0+0x12109) (BuildId: 53a29374ac557d631d863d9908ff5bec82f55ba5)
+    #2 0x730f86217f42  (/lib/x86_64-linux-gnu/libopus.so.0+0x37f42) (BuildId: 53a29374ac557d631d863d9908ff5bec82f55ba5)
+    #3 0x730f862194ad  (/lib/x86_64-linux-gnu/libopus.so.0+0x394ad) (BuildId: 53a29374ac557d631d863d9908ff5bec82f55ba5)
+    #4 0x730f86222f11  (/lib/x86_64-linux-gnu/libopus.so.0+0x42f11) (BuildId: 53a29374ac557d631d863d9908ff5bec82f55ba5)
+    #5 0x730f8622319c in opus_multistream_decode_float (/lib/x86_64-linux-gnu/libopus.so.0+0x4319c) (BuildId: 53a29374ac557d631d863d9908ff5bec82f55ba5)
+    #6 0x730f861d6a9e  (/lib/libopusfile.so.0+0x4a9e) (BuildId: e3d512635f4e60b73ac3b43dd06af214c846857e)
+    #7 0x730f861d80ea  (/lib/libopusfile.so.0+0x60ea) (BuildId: e3d512635f4e60b73ac3b43dd06af214c846857e)
+    #8 0x730f861d82f9  (/lib/libopusfile.so.0+0x62f9) (BuildId: e3d512635f4e60b73ac3b43dd06af214c846857e)
+    #9 0x5bb57d2fab96 in fillBuffer /home/lloyd/Documents/droidkit-opus-master/opus/src/main/jni/./audio.c:626:35
+    #10 0x5bb57d2fb4ac in thread_decoder_worker /home/lloyd/Documents/droidkit-opus-master/opus/src/main/jni/test_uaf.c:23:9
+    #11 0x730f85e94a82 in start_thread nptl/./nptl/pthread_create.c:442:8
+    #12 0x730f85f268df  misc/../sysdeps/unix/sysv/linux/x86_64/clone3.S:81
+
+0x62900001d7a0 is located 17824 bytes inside of 18504-byte region [0x629000019200,0x62900001da48)
+freed by thread T0 here:
+    #0 0x5bb57d2be022 in free (/home/lloyd/Documents/droidkit-opus-master/opus/src/main/jni/uaf_test+0xa2022) (BuildId: c46328532cffb6f7d583cc0bca8a0239d3257064)
+    #1 0x730f861d6399  (/lib/libopusfile.so.0+0x4399) (BuildId: e3d512635f4e60b73ac3b43dd06af214c846857e)
+
+previously allocated by thread T0 here:
+    #0 0x5bb57d2be2ce in __interceptor_malloc (/home/lloyd/Documents/droidkit-opus-master/opus/src/main/jni/uaf_test+0xa22ce) (BuildId: c46328532cffb6f7d583cc0bca8a0239d3257064)
+    #1 0x730f862226a2 in opus_multistream_decoder_create (/lib/x86_64-linux-gnu/libopus.so.0+0x426a2) (BuildId: 53a29374ac557d631d863d9908ff5bec82f55ba5)
+
+Thread T1 created by T0 here:
+    #0 0x5bb57d2a774c in pthread_create (/home/lloyd/Documents/droidkit-opus-master/opus/src/main/jni/uaf_test+0x8b74c) (BuildId: c46328532cffb6f7d583cc0bca8a0239d3257064)
+    #1 0x5bb57d2fb1b5 in run_decoder_uaf /home/lloyd/Documents/droidkit-opus-master/opus/src/main/jni/test_uaf.c:35:5
+    #2 0x5bb57d2fb1b5 in main /home/lloyd/Documents/droidkit-opus-master/opus/src/main/jni/test_uaf.c:97:16
+    #3 0x730f85e29d8f in __libc_start_call_main csu/../sysdeps/nptl/libc_start_call_main.h:58:16
+
+SUMMARY: AddressSanitizer: heap-use-after-free (/home/lloyd/Documents/droidkit-opus-master/opus/src/main/jni/uaf_test+0x396d3) (BuildId: c46328532cffb6f7d583cc0bca8a0239d3257064) in __interceptor_memcpy
+Shadow bytes around the buggy address:
+  0x0c527fffbaa0: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0x0c527fffbab0: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0x0c527fffbac0: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0x0c527fffbad0: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0x0c527fffbae0: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+=>0x0c527fffbaf0: fd fd fd fd[fd]fd fd fd fd fd fd fd fd fd fd fd
+  0x0c527fffbb00: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0x0c527fffbb10: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0x0c527fffbb20: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0x0c527fffbb30: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0x0c527fffbb40: fd fd fd fd fd fd fd fd fd fa fa fa fa fa fa fa
+Shadow byte legend (one shadow byte represents 8 application bytes):
+  Addressable:           00
+  Partially addressable: 01 02 03 04 05 06 07
+  Heap left redzone:       fa
+  Freed heap region:       fd
+  Stack left redzone:      f1
+  Stack mid redzone:       f2
+  Stack right redzone:     f3
+  Stack after return:      f5
+  Stack use after scope:   f8
+  Global redzone:          f9
+  Global init order:       f6
+  Poisoned by user:        f7
+  Container overflow:      fc
+  Array cookie:            ac
+  Intra object redzone:    bb
+  ASan internal:           fe
+  Left alloca redzone:     ca
+  Right alloca redzone:    cb
+Stats: 8M malloced (0M for red zones) by 1616 calls
+Stats: 1M realloced by 277 calls
+Stats: 8M freed by 1594 calls
+Stats: 0M really freed by 0 calls
+Stats: 12M (12M-0M) mmaped; 205 maps, 0 unmaps
+  mallocs by size class: 2:280; 3:73; 4:2; 11:1; 14:1; 18:1; 19:139; 21:70; 25:70; 29:70; 33:210; 35:140; 37:140; 39:209; 41:209; 42:1;
+Stats: malloc large: 0
+Stats: StackDepot: 185 ids; 9M allocated
+Stats: SizeClassAllocator64: 12M mapped (9M rss) in 2683 allocations; remains 2683
+  02 (    32): mapped:     64K allocs:     384 frees:       0 inuse:    384 num_freed_chunks    1664 avail:   2048 rss:     12K releases:      0 last released:      0K region: 0x602000000000
+  03 (    48): mapped:     64K allocs:     256 frees:       0 inuse:    256 num_freed_chunks    1109 avail:   1365 rss:      8K releases:      0 last released:      0K region: 0x603000000000
+  04 (    64): mapped:     64K allocs:     128 frees:       0 inuse:    128 num_freed_chunks     896 avail:   1024 rss:      4K releases:      0 last released:      0K region: 0x604000000000
+  11 (   176): mapped:     64K allocs:     128 frees:       0 inuse:    128 num_freed_chunks     244 avail:    372 rss:      4K releases:      0 last released:      0K region: 0x60b000000000
+  14 (   224): mapped:     64K allocs:     128 frees:       0 inuse:    128 num_freed_chunks     164 avail:    292 rss:      4K releases:      0 last released:      0K region: 0x60e000000000
+  18 (   384): mapped:     64K allocs:     128 frees:       0 inuse:    128 num_freed_chunks      42 avail:    170 rss:      4K releases:      0 last released:      0K region: 0x612000000000
+  19 (   448): mapped:    128K allocs:     256 frees:       0 inuse:    256 num_freed_chunks      36 avail:    292 rss:     68K releases:      0 last released:      0K region: 0x613000000000
+  21 (   640): mapped:     64K allocs:     102 frees:       0 inuse:    102 num_freed_chunks       0 avail:    102 rss:     48K releases:      0 last released:      0K region: 0x615000000000
+  25 (  1280): mapped:    128K allocs:     102 frees:       0 inuse:    102 num_freed_chunks       0 avail:    102 rss:     92K releases:      0 last released:      0K region: 0x619000000000
+  29 (  2560): mapped:    192K allocs:      75 frees:       0 inuse:     75 num_freed_chunks       1 avail:     76 rss:    184K releases:      0 last released:      0K region: 0x61d000000000
+  33 (  5120): mapped:   1152K allocs:     228 frees:       0 inuse:    228 num_freed_chunks       2 avail:    230 rss:   1092K releases:      0 last released:      0K region: 0x621000000000
+  35 (  7168): mapped:   1088K allocs:     153 frees:       0 inuse:    153 num_freed_chunks       2 avail:    155 rss:   1024K releases:      0 last released:      0K region: 0x623000000000
+  36 (  8192): mapped:    192K allocs:      24 frees:       0 inuse:     24 num_freed_chunks       0 avail:     24 rss:     44K releases:      0 last released:      0K region: 0x624000000000
+  37 ( 10240): mapped:   1536K allocs:     150 frees:       0 inuse:    150 num_freed_chunks       3 avail:    153 rss:   1168K releases:      0 last released:      0K region: 0x625000000000
+  39 ( 14336): mapped:   3136K allocs:     220 frees:       0 inuse:    220 num_freed_chunks       4 avail:    224 rss:   2776K releases:      0 last released:      0K region: 0x627000000000
+  41 ( 20480): mapped:   4416K allocs:     219 frees:       0 inuse:    219 num_freed_chunks       1 avail:    220 rss:   2920K releases:      0 last released:      0K region: 0x629000000000
+  42 ( 24576): mapped:     64K allocs:       2 frees:       0 inuse:      2 num_freed_chunks       0 avail:      2 rss:      8K releases:      0 last released:      0K region: 0x62a000000000
+Stats: LargeMmapAllocator: allocated 0 times, remains 0 (0 K) max 0 M; by size logs:
+Quarantine limits: global: 256Mb; thread local: 1024Kb
+Global quarantine stats: batches: 9; bytes: 9485984 (user: 9412256); chunks: 1609 (capacity: 9189); 17% chunks used; 0% memory overhead
+==13033==ABORTING
+Aborted (core dumped)
+
+
+
 Evidence
 ASAN heap‑use‑after‑free crash log
 Multi‑threaded race PoC source
